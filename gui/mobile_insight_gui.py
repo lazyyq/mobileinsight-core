@@ -307,7 +307,8 @@ class WindowClass(wx.Frame):
                         "Multiple files in " +
                         openFileDialog.Directory)
 
-            except e:
+            # kykint
+            except BaseException as e:
                 print(("Error while opening file.", e))
             # if (random() > 0.5):
             #    self.SetupGrid(self.data1)
@@ -330,12 +331,11 @@ class WindowClass(wx.Frame):
         if (timewindowDialog.ShowModal() == wx.ID_OK):
             select_start = timewindowDialog.cur_start
             select_end = timewindowDialog.cur_end
+            # kykint: Properly handle seconds without decimal points
             self.data_view = [
-                x for x in self.data_view if datetime.strptime(
-                    x["Timestamp"],
-                    '%Y-%m-%d  %H:%M:%S.%f') >= select_start and datetime.strptime(
-                    x["Timestamp"],
-                    '%Y-%m-%d  %H:%M:%S.%f') <= select_end]
+                x for x in self.data_view if select_start <=
+                    datetime.strptime(x["Timestamp"], '%Y-%m-%d  %H:%M:%S' + ('.%f' if '.' in x["Timestamp"] else ''))
+                        <= select_end]
             self.SetupGrid()
 
     def OnReset(self, e):
@@ -547,7 +547,9 @@ class WindowClass(wx.Frame):
             except Exception as e:
                 cur_time = datetime.strptime(
                     self.data_view[i]["Timestamp"], '%Y-%m-%d  %H:%M:%S')
-            self.min_time = min(self.min_time, cur_time)
+            # kykint: Ignore modem debug messages which are from 1980
+            if cur_time.year >= 2000:
+                self.min_time = min(self.min_time, cur_time)
             self.max_time = max(self.max_time, cur_time)
             self.grid.SetCellValue(i, 0, str(self.data_view[i]["Timestamp"]))
             self.grid.SetCellValue(i, 1, str(self.data_view[i]["TypeID"]))
